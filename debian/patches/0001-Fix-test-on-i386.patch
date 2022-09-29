@@ -1,0 +1,26 @@
+From: Shengjing Zhu <zhsj@debian.org>
+Date: Mon, 13 Sep 2021 13:12:10 +0800
+Subject: Fix test on i386
+
+Bug: https://github.com/dominikh/go-tools/issues/1082
+---
+ staticcheck/testdata/src/CheckAtomicAlignment/atomic32.go | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/staticcheck/testdata/src/CheckAtomicAlignment/atomic32.go b/staticcheck/testdata/src/CheckAtomicAlignment/atomic32.go
+index 36bbf5d..bf5659f 100644
+--- a/staticcheck/testdata/src/CheckAtomicAlignment/atomic32.go
++++ b/staticcheck/testdata/src/CheckAtomicAlignment/atomic32.go
+@@ -16,12 +16,3 @@ func fn() {
+ 	atomic.AddInt64(&v.C, 0) // want `address of non 64-bit aligned field C passed to sync/atomic.AddInt64`
+ 	atomic.LoadInt64(&v.C)   // want `address of non 64-bit aligned field C passed to sync/atomic.LoadInt64`
+ }
+-
+-func fn2(t *T) {
+-	addr := &t.C
+-	if true {
+-		atomic.LoadUint64(addr) // want `address of non 64-bit`
+-	} else {
+-		_ = addr
+-	}
+-}

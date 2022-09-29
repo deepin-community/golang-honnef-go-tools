@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --builddirectory=_build --buildsystem=golang --with=golang
+
+override_dh_auto_install:
+	dh_auto_install -- --no-binaries
+
+ifneq (,$(filter $(DEB_HOST_ARCH), armhf))
+override_dh_auto_test:
+	# run out of memory: cannot allocate 4194304-byte block (3459678208 in use)
+	-dh_auto_test
+endif

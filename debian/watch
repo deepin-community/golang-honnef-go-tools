@@ -1,0 +1,2 @@
+version=4
+  https://github.com/dominikh/go-tools/tags .*/v?(\d\S*)\.tar\.gz debian

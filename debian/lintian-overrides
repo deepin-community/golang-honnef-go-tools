@@ -1,0 +1,5 @@
+# Testdata
+arch-dependent-file-in-usr-share usr/share/gocode/src/honnef.co/go/tools/internal/go/gcimporter/testdata/versions/test_go1.11_0i.a
+arch-dependent-file-in-usr-share usr/share/gocode/src/honnef.co/go/tools/internal/go/gcimporter/testdata/versions/test_go1.11_999i.a
+arch-independent-package-contains-binary-or-object usr/share/gocode/src/honnef.co/go/tools/internal/go/gcimporter/testdata/versions/test_go1.11_0i.a
+arch-independent-package-contains-binary-or-object usr/share/gocode/src/honnef.co/go/tools/internal/go/gcimporter/testdata/versions/test_go1.11_999i.a
