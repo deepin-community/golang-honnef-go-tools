@@ -1,14 +1,82 @@
-golang-honnef-go-tools (2021.1.1.1-1+deepin) UNRELEASED; urgency=medium
+golang-honnef-go-tools (2023.1-1) unstable; urgency=medium
 
-  * update
+  [ Anthony Fok ]
+  * Build-depend explicitly on golang-any (>= 2:1.17~) as per go.mod
 
- -- Debian Go Packaging Team <team+pkg-go@tracker.debian.org>  Thu, 28 Jul 2022 11:11:16 +0800
+  [ Shengjing Zhu ]
+  * New upstream version 2023.1
+  * Update Standards-Version to 4.6.2 (no changes)
 
-golang-honnef-go-tools (2021.1.1.1-1+deepin) unstable; urgency=medium
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 07 Feb 2023 16:59:33 +0800
 
-  * Enable sunway testcase.
+golang-honnef-go-tools (2022.1.3-3) unstable; urgency=medium
 
- -- Miao Changwei <miaochangwei@uniontech.com>  Mon, 23 May 2022 18:11:21 +0800
+  * Source-only upload for testing migration
+
+ -- Shengjing Zhu <zhsj@debian.org>  Wed, 03 Aug 2022 01:59:42 +0800
+
+golang-honnef-go-tools (2022.1.3-2) unstable; urgency=medium
+
+  * Build new go-staticcheck package
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sun, 31 Jul 2022 23:59:25 +0800
+
+golang-honnef-go-tools (2022.1.3-1) unstable; urgency=medium
+
+  * New upstream version 2022.1.3
+  * Add myself to Uploaders
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sun, 31 Jul 2022 23:39:45 +0800
+
+golang-honnef-go-tools (2022.1.2-3) unstable; urgency=medium
+
+  * Team upload
+  * Fix CheckAtomicAlignment test on s390x
+
+ -- Shengjing Zhu <zhsj@debian.org>  Mon, 20 Jun 2022 03:31:41 +0800
+
+golang-honnef-go-tools (2022.1.2-2) unstable; urgency=medium
+
+  * Team upload
+  * Fix DH_GOLANG_EXCLUDES pattern
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sun, 19 Jun 2022 15:31:54 +0800
+
+golang-honnef-go-tools (2022.1.2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version 2022.1.2
+  * Update Standards-Version to 4.6.1 (no changes)
+  * USe DH_GOLANG_EXCLUDES to exclude binaries
+  * Bump golang-golang-x-tools-dev to 1:0.1.11~
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 18 Jun 2022 16:17:52 +0800
+
+golang-honnef-go-tools (2022.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version 2022.1 (Closes: #1008433)
+  * Add Multi-Arch hint
+  * Remove patches applied in new version
+  * Add golang-golang-x-exp-dev to Depends
+  * Remove unused lintian overrides
+  * Update copyright file
+
+ -- Shengjing Zhu <zhsj@debian.org>  Thu, 31 Mar 2022 01:06:48 +0800
+
+golang-honnef-go-tools (2021.1.2-2) unstable; urgency=medium
+
+  * Team upload.
+  * Restore patch for unit tests on 32bit
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 12 Feb 2022 17:50:21 +0800
+
+golang-honnef-go-tools (2021.1.2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version 2021.1.2
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 12 Feb 2022 01:26:11 +0800
 
 golang-honnef-go-tools (2021.1.1-2) unstable; urgency=medium
 

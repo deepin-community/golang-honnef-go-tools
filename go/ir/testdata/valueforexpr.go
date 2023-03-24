@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 package main
 
@@ -8,7 +9,7 @@ package main
 // non-nil Value of the same type as e and of kind 'kind'.
 
 func f(spilled, unspilled int) {
-	_ = /*@Load*/ (spilled)
+	_ = /*@Parameter*/ (spilled)
 	_ = /*@Parameter*/ (unspilled)
 	_ = /*@nil*/ (1 + 2) // (constant)
 	i := 0
@@ -40,6 +41,8 @@ func f(spilled, unspilled int) {
 	_ = /*@Slice*/ (make([]int, 0))
 	_ = /*@MakeClosure*/ (func() { print(spilled) })
 
+	_ = /*@Load*/ (spilled)
+
 	sl := []int{}
 	_ = /*@Slice*/ (sl[:0])
 
@@ -64,8 +67,9 @@ func f(spilled, unspilled int) {
 	// Exercise corner-cases of lvalues vs rvalues.
 	type N *N
 	var n N
-	/*@Load*/ (n) = /*@Load*/ (n)
+	/*@Const*/ (n) = /*@Const*/ (n)
 	/*@ChangeType*/ (n) = /*@Alloc*/ (&n)
+	/*@Load*/ (n) = /*@Load*/ (n)
 	/*@Load*/ (n) = /*@Load*/ (*n)
 	/*@Load*/ (n) = /*@Load*/ (**n)
 }
@@ -92,16 +96,16 @@ func complit() {
 	_ = & /*@Slice*/ ([]int{})
 
 	// 2. Arrays
-	print( /*@Load*/ ([1]int{}))
+	print( /*@ArrayConst*/ ([1]int{}))
 	print( /*@Alloc*/ (&[1]int{}))
 	print(& /*@Alloc*/ ([1]int{}))
 
-	arr1 := /*@Alloc*/ ([1]int{})
+	arr1 := /*@ArrayConst*/ ([1]int{})
 	arr2 := /*@Alloc*/ (&[1]int{})
 	arr3 := & /*@Alloc*/ ([1]int{})
 	_, _, _ = arr1, arr2, arr3
 
-	_ = /*@Load*/ ([1]int{})
+	_ = /*@ArrayConst*/ ([1]int{})
 	_ = /*@Alloc*/ (& /*@Alloc*/ ([1]int{}))
 	_ = & /*@Alloc*/ ([1]int{})
 
@@ -121,16 +125,16 @@ func complit() {
 	_ = & /*@MakeMap*/ (M{})
 
 	// 4. Structs
-	print( /*@Load*/ (struct{}{}))
+	print( /*@AggregateConst*/ (struct{}{}))
 	print( /*@Alloc*/ (&struct{}{}))
 	print(& /*@Alloc*/ (struct{}{}))
 
-	s1 := /*@Alloc*/ (struct{}{})
+	s1 := /*@AggregateConst*/ (struct{}{})
 	s2 := /*@Alloc*/ (&struct{}{})
 	s3 := & /*@Alloc*/ (struct{}{})
 	_, _, _ = s1, s2, s3
 
-	_ = /*@Load*/ (struct{}{})
+	_ = /*@AggregateConst*/ (struct{}{})
 	_ = /*@Alloc*/ (& /*@Alloc*/ (struct{}{}))
 	_ = & /*@Alloc*/ (struct{}{})
 }
@@ -150,3 +154,16 @@ func init() {
 
 // Ensure we can locate variables in initializer expressions.
 var global = /*@MakeMap*/ (make(map[string]string))
+
+type t1 struct {
+	x int
+}
+type t2 struct {
+	x int `tag`
+}
+
+func main() {
+	var tv1 t1
+	var tv2 t2 = /*@ChangeType*/ (t2(tv1))
+	_ = tv2
+}

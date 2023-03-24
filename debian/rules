@@ -1,13 +1,17 @@
 #!/usr/bin/make -f
 
+# Don't use "cmd", as it will match "lincmd".
+export DH_GOLANG_EXCLUDES := website internal/cmd internal/gosmith \
+	cmd/keyify cmd/structlayout cmd/structlayout-optimize cmd/structlayout-pretty
+
 %:
 	dh $@ --builddirectory=_build --buildsystem=golang --with=golang
-
-override_dh_auto_install:
-	dh_auto_install -- --no-binaries
 
 ifneq (,$(filter $(DEB_HOST_ARCH), armhf))
 override_dh_auto_test:
 	# run out of memory: cannot allocate 4194304-byte block (3459678208 in use)
 	-dh_auto_test
 endif
+
+execute_after_dh_auto_build:
+	mv _build/bin/staticcheck _build/bin/go-staticcheck

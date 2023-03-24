@@ -1,2 +1,1 @@
-0001-Fix-test-on-i386.patch
-enable-sunway-testcase.patch
+0001-Fix-CheckAtomicAlignment-test-on-s390x.patch
