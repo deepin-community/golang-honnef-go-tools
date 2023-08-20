@@ -5,6 +5,7 @@
 package ir_test
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/importer"
@@ -13,6 +14,7 @@ import (
 	"go/types"
 	"log"
 	"os"
+	"strings"
 
 	"honnef.co/go/tools/go/ir"
 	"honnef.co/go/tools/go/ir/irutil"
@@ -49,11 +51,10 @@ func main() {
 // Build and run the irdump.go program if you want a standalone tool
 // with similar functionality. It is located at
 // honnef.co/go/tools/internal/cmd/irdump.
-//
 func Example_buildPackage() {
 	// Parse the source files.
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "hello.go", hello, parser.ParseComments)
+	f, err := parser.ParseFile(fset, "hello.go", hello, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
 		fmt.Print(err) // parse error
 		return
@@ -76,8 +77,17 @@ func Example_buildPackage() {
 	hello.WriteTo(os.Stdout)
 
 	// Print out the package-level functions.
-	hello.Func("init").WriteTo(os.Stdout)
-	hello.Func("main").WriteTo(os.Stdout)
+	// Replace interface{} with any so the tests work for Go 1.17 and Go 1.18.
+	{
+		var buf bytes.Buffer
+		ir.WriteFunction(&buf, hello.Func("init"))
+		fmt.Print(strings.ReplaceAll(buf.String(), "interface{}", "any"))
+	}
+	{
+		var buf bytes.Buffer
+		ir.WriteFunction(&buf, hello.Func("main"))
+		fmt.Print(strings.ReplaceAll(buf.String(), "interface{}", "any"))
+	}
 
 	// Output:
 	// package hello:
@@ -110,11 +120,11 @@ func Example_buildPackage() {
 	// b0: # entry
 	// 	t1 = Const <string> {"Hello, World!"}
 	// 	t2 = Const <int> {0}
-	// 	t3 = HeapAlloc <*[1]interface{}>
-	// 	t4 = IndexAddr <*interface{}> t3 t2
-	// 	t5 = MakeInterface <interface{}> t1
-	// 	Store {interface{}} t4 t5
-	// 	t7 = Slice <[]interface{}> t3 <nil> <nil> <nil>
+	// 	t3 = HeapAlloc <*[1]any>
+	// 	t4 = IndexAddr <*any> t3 t2
+	// 	t5 = MakeInterface <any> t1
+	// 	Store {any} t4 t5
+	// 	t7 = Slice <[]any> t3 <nil> <nil> <nil>
 	// 	t8 = Call <(n int, err error)> fmt.Println t7
 	// 	Jump → b1
 	//
@@ -127,7 +137,7 @@ func Example_buildPackage() {
 // analysis capable of operating on a single package.
 func Example_loadPackages() {
 	// Load, parse, and type-check the initial packages.
-	cfg := &packages.Config{Mode: packages.LoadSyntax}
+	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo}
 	initial, err := packages.Load(cfg, "fmt", "net/http")
 	if err != nil {
 		log.Fatal(err)
@@ -157,7 +167,7 @@ func Example_loadPackages() {
 // This is what you'd typically use for a whole-program analysis.
 func Example_loadWholeProgram() {
 	// Load, parse, and type-check the whole program.
-	cfg := packages.Config{Mode: packages.LoadAllSyntax}
+	cfg := packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedDeps}
 	initial, err := packages.Load(&cfg, "fmt", "net/http")
 	if err != nil {
 		log.Fatal(err)

@@ -4,6 +4,7 @@
 
 // No testdata on Android.
 
+//go:build !android
 // +build !android
 
 package irutil
@@ -12,17 +13,20 @@ import (
 	"bytes"
 	"fmt"
 	"go/parser"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"honnef.co/go/tools/go/ir"
 
+	"golang.org/x/tools/go/analysis/analysistest"
+	//lint:ignore SA1019 go/loader is deprecated, but works fine for our tests
 	"golang.org/x/tools/go/loader"
 )
 
 func TestSwitches(t *testing.T) {
 	conf := loader.Config{ParserMode: parser.ParseComments}
-	f, err := conf.ParseFile("testdata/switches.go", nil)
+	f, err := conf.ParseFile(filepath.Join(analysistest.TestData(), "switches.go"), nil)
 	if err != nil {
 		t.Error(err)
 		return

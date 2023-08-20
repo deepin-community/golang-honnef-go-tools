@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 package main
 
@@ -51,7 +52,7 @@ func main() {
 	// v1 is captured and thus implicitly address-taken.
 	var v1 int = 1         //@ ir(v1,"Const")
 	v1 = 2                 //@ ir(v1,"Const")
-	fmt.Println(v1)        //@ ir(v1,"Load") // load
+	fmt.Println(v1)        //@ ir(v1,"Const")
 	f := func(param int) { //@ ir(f,"MakeClosure"), ir(param,"Parameter")
 		if y := 1; y > 0 { //@ ir(y,"Const")
 			print(v1, param) //@ ir(v1,"Load") /*load*/, ir(param,"Sigma")
@@ -59,6 +60,7 @@ func main() {
 		param = 2      //@ ir(param,"Const")
 		println(param) //@ ir(param,"Const")
 	}
+	fmt.Println(v1) //@ ir(v1,"Load") // load
 
 	f(0) //@ ir(f,"MakeClosure")
 
@@ -155,6 +157,7 @@ func main() {
 	type N *N
 	var n N    //@ ir(n,"Const")
 	n1 := n    //@ ir(n1,"Const"), ir(n,"Const")
+	_ = &n1    //@ ir(n1,"&Alloc") // make n1 escape right away, else our lifting is too good
 	n2 := &n1  //@ ir(n2,"Alloc"), ir(n1,"&Alloc")
 	n3 := *n2  //@ ir(n3,"Load"), ir(n2,"Alloc")
 	n4 := **n3 //@ ir(n4,"Load"), ir(n3,"Load")
