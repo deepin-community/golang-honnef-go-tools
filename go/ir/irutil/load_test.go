@@ -34,7 +34,7 @@ func TestBuildPackage(t *testing.T) {
 	// IR program it builds in ../ir/builder_test.go.
 
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "hello.go", hello, 0)
+	f, err := parser.ParseFile(fset, "hello.go", hello, parser.SkipObjectResolution)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestBuildPackage(t *testing.T) {
 }
 
 func TestPackages(t *testing.T) {
-	cfg := &packages.Config{Mode: packages.LoadSyntax}
+	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo}
 	initial, err := packages.Load(cfg, "bytes")
 	if err != nil {
 		t.Fatal(err)
@@ -81,14 +81,16 @@ func TestPackages(t *testing.T) {
 # Location: $GOROOT/src/bytes/buffer.go:1
 func NewBuffer(buf []byte) *Buffer:
 b0: # entry
-	t1 = Parameter <[]byte> {buf}
-	t2 = HeapAlloc <*Buffer>
-	t3 = FieldAddr <*[]byte> [0] (buf) t2
-	Store {[]byte} t3 t1
+	t1 = Const <int> {0}
+	t2 = Const <readOp> {0}
+	t3 = Parameter <[]byte> {buf}
+	t4 = HeapAlloc <*Buffer>
+	t5 = CompositeValue <Buffer> [100] t3 t1 t2
+	Store {bytes.Buffer} t4 t5
 	Jump → b1
 
 b1: ← b0 # exit
-	Return t2
+	Return t4
 
 `[1:]
 	if got != want {
@@ -98,7 +100,7 @@ b1: ← b0 # exit
 
 func TestBuildPackage_MissingImport(t *testing.T) {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "bad.go", `package bad; import "missing"`, 0)
+	f, err := parser.ParseFile(fset, "bad.go", `package bad; import "missing"`, parser.SkipObjectResolution)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +117,7 @@ func TestIssue28106(t *testing.T) {
 	// export data, but does not type check function bodies of
 	// imported packages. This test ensures that we do not attempt
 	// to run the IR builder on functions without type information.
-	cfg := &packages.Config{Mode: packages.LoadSyntax}
+	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo}
 	pkgs, err := packages.Load(cfg, "runtime")
 	if err != nil {
 		t.Fatal(err)

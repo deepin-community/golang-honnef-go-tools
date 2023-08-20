@@ -1,4 +1,0 @@
-cmd/go-module-query/
-# Using incompatible golang-golang-x-tools-dev version
-ir/source_test.go
-ir/identical_test.go
