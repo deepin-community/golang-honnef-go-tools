@@ -12,9 +12,8 @@ Copyright: 2020 Pirate Praveen <praveen@debian.org>
 License: Expat
 Comment: Debian packaging is licensed under the same terms as upstream
 
-Files: go/callgraph/*  go/gcsizes/*  go/ir/*  go/loader/*
-       internal/cache/* internal/cmd/irdump/* internal/passes/* internal/renameio/* internal/robustio/* internal/testenv/*
-       unused/typemap/*
+Files: go/gcsizes/*  go/ir/*  go/loader/*
+       lintcmd/cache/* internal/cmd/irdump/* internal/passes/* internal/renameio/* internal/robustio/* internal/testenv/*
        staticcheck/testdata/src/CheckStaticBitShift/CheckStaticBitShift.go
 Copyright: 2013-2019 The Go Authors
 License: BSD-3-clause

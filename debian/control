@@ -1,15 +1,17 @@
 Source: golang-honnef-go-tools
 Maintainer: Debian Go Packaging Team <team+pkg-go@tracker.debian.org>
 Uploaders: Pirate Praveen <praveen@debian.org>,
+           Shengjing Zhu <zhsj@debian.org>,
 Section: golang
 Testsuite: autopkgtest-pkg-go
 Priority: optional
 Build-Depends: debhelper-compat (= 13),
                dh-golang,
-               golang-any,
+               golang-any (>= 2:1.17~),
                golang-github-burntsushi-toml-dev,
-               golang-golang-x-tools-dev,
-Standards-Version: 4.6.0
+               golang-golang-x-exp-dev (>= 0.0~git20220328~),
+               golang-golang-x-tools-dev (>= 1:0.1.11~),
+Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/go-team/packages/golang-honnef-go-tools
 Vcs-Git: https://salsa.debian.org/go-team/packages/golang-honnef-go-tools.git
 Homepage: https://github.com/dominikh/go-tools
@@ -18,18 +20,28 @@ XS-Go-Import-Path: honnef.co/go/tools
 
 Package: golang-honnef-go-tools-dev
 Architecture: all
+Multi-Arch: foreign
 Depends: golang-github-burntsushi-toml-dev,
-         golang-golang-x-tools-dev,
+         golang-golang-x-exp-dev (>= 0.0~git20220328~),
+         golang-golang-x-tools-dev (>= 1:0.1.11~),
          ${misc:Depends},
-Description: Collection of golang tools and libraries
- keyify: Transforms an unkeyed struct literal into a keyed one.
- rdeps: Find all reverse dependencies of a set of packages.
- staticcheck: Go static analysis, detecting bugs, performance issues, and much
- more.
- structlayout: Displays the layout (field sizes and padding) of structs.
- structlayout-optimize: Reorders struct fields to minimize the amount of
- padding.
- structlayout-pretty: Formats the output of structlayout with ASCII art.
- .
- In addition to the aforementioned tools, this package contains the libraries
- necessary to implement these tools.
+Description: libraries for advanced Go linter
+ Libraries to implement following tools:
+  * keyify: Transforms an unkeyed struct literal into a keyed one.
+  * rdeps: Find all reverse dependencies of a set of packages.
+  * staticcheck: Go static analysis, detecting bugs, performance issues, and
+    much more.
+  * structlayout: Displays the layout (field sizes and padding) of structs.
+  * structlayout-optimize: Reorders struct fields to minimize the amount of
+    padding.
+  * structlayout-pretty: Formats the output of structlayout with ASCII art.
+
+Package: go-staticcheck
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Built-Using: ${misc:Built-Using},
+Description: advanced Go linter
+ Staticcheck is a state of the art linter for the Go programming language.
+ Using static analysis, it finds bugs and performance issues, offers
+ simplifications, and enforces style rules.

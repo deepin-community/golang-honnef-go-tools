@@ -1,18 +1,23 @@
 package unused
 
 import (
-	"go/types"
+	"fmt"
+	"go/token"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
+	"golang.org/x/tools/go/expect"
 )
 
-type expectation bool
+type expectation uint8
 
 const (
-	shouldBeUsed   = true
-	shouldBeUnused = false
+	shouldBeUsed = iota
+	shouldBeUnused
+	shouldBeQuiet
 )
 
 func (exp expectation) String() string {
@@ -21,16 +26,63 @@ func (exp expectation) String() string {
 		return "used"
 	case shouldBeUnused:
 		return "unused"
+	case shouldBeQuiet:
+		return "quiet"
 	default:
 		panic("unreachable")
 	}
 }
 
-func check(t *testing.T, res *analysistest.Result) {
-	type key struct {
-		file string
-		line int
+type key struct {
+	ident string
+	file  string
+	line  int
+}
+
+func (k key) String() string {
+	return fmt.Sprintf("%s:%d", k.file, k.line)
+}
+
+func relativePath(s string) string {
+	// This is only used in a test, so we don't care about failures, or the cost of repeatedly calling os.Getwd
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
 	}
+	s, err = filepath.Rel(cwd, s)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func relativePosition(pos token.Position) string {
+	s := pos.Filename
+	if pos.IsValid() {
+		if s != "" {
+			// This is only used in a test, so we don't care about failures, or the cost of repeatedly calling os.Getwd
+			cwd, err := os.Getwd()
+			if err != nil {
+				panic(err)
+			}
+			s, err = filepath.Rel(cwd, s)
+			if err != nil {
+				panic(err)
+			}
+			s += ":"
+		}
+		s += fmt.Sprintf("%d", pos.Line)
+		if pos.Column != 0 {
+			s += fmt.Sprintf(":%d", pos.Column)
+		}
+	}
+	if s == "" {
+		s = "-"
+	}
+	return s
+}
+
+func check(t *testing.T, res *analysistest.Result) {
 	want := map[key]expectation{}
 	files := map[string]struct{}{}
 
@@ -48,126 +100,107 @@ func check(t *testing.T, res *analysistest.Result) {
 			continue
 		}
 		files[filename] = struct{}{}
-		for _, cgroup := range f.Comments {
-		commentLoop:
-			for _, c := range cgroup.List {
-				text := strings.TrimPrefix(c.Text, "//")
-				if text == c.Text {
-					continue // not a //-comment
+		notes, err := expect.ExtractGo(res.Pass.Fset, f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, note := range notes {
+			posn := res.Pass.Fset.PositionFor(note.Pos, false)
+			switch note.Name {
+			case "quiet":
+				if len(note.Args) != 1 {
+					t.Fatalf("malformed directive at %s", posn)
 				}
 
-				fields := strings.Fields(text)
-				posn := res.Pass.Fset.Position(c.Pos())
-				for _, field := range fields {
-					switch field {
-					case "used", "unused", "used_test", "unused_test":
-					default:
-						continue commentLoop
-					}
+				if !isTest {
+					want[key{note.Args[0].(string), posn.Filename, posn.Line}] = expectation(shouldBeQuiet)
 				}
-				for _, field := range fields {
-					switch field {
-					case "used":
-						if !isTest {
-							want[key{posn.Filename, posn.Line}] = shouldBeUsed
-						}
-					case "unused":
-						if !isTest {
-							want[key{posn.Filename, posn.Line}] = shouldBeUnused
-						}
-					case "used_test":
-						if isTest {
-							want[key{posn.Filename, posn.Line}] = shouldBeUsed
-						}
-					case "unused_test":
-						if isTest {
-							want[key{posn.Filename, posn.Line}] = shouldBeUnused
-						}
+			case "quiet_test":
+				if len(note.Args) != 1 {
+					t.Fatalf("malformed directive at %s", posn)
+				}
+
+				if isTest {
+					want[key{note.Args[0].(string), posn.Filename, posn.Line}] = expectation(shouldBeQuiet)
+				}
+			case "used":
+				if len(note.Args) != 2 {
+					t.Fatalf("malformed directive at %s", posn)
+				}
+
+				if !isTest {
+					var e expectation
+					if note.Args[1].(bool) {
+						e = shouldBeUsed
+					} else {
+						e = shouldBeUnused
 					}
+					want[key{note.Args[0].(string), posn.Filename, posn.Line}] = e
+				}
+			case "used_test":
+				if len(note.Args) != 2 {
+					t.Fatalf("malformed directive at %s", posn)
+				}
+
+				if isTest {
+					var e expectation
+					if note.Args[1].(bool) {
+						e = shouldBeUsed
+					} else {
+						e = shouldBeUnused
+					}
+					want[key{note.Args[0].(string), posn.Filename, posn.Line}] = expectation(e)
 				}
 			}
 		}
 	}
 
-	checkObjs := func(objs []types.Object, state expectation) {
+	checkObjs := func(objs []Object, state expectation) {
 		for _, obj := range objs {
-			posn := res.Pass.Fset.Position(obj.Pos())
+			// if t, ok := obj.Type().(*types.Named); ok && t.TypeArgs().Len() != 0 {
+			// 	continue
+			// }
+			posn := obj.Position
 			if _, ok := files[posn.Filename]; !ok {
 				continue
 			}
 
-			k := key{posn.Filename, posn.Line}
+			// This key isn't great. Because of generics, multiple objects (instantiations of a generic type) exist at
+			// the same location. This only works because we ignore instantiations, but may lead to confusing test failures.
+			k := key{obj.ShortName, posn.Filename, posn.Line}
 			exp, ok := want[k]
 			if !ok {
-				t.Errorf("unexpected %s object at %s", state, posn)
+				t.Errorf("object at %s (%s) shouldn't exist but is %s (tests = %t)", relativePosition(posn), obj.ShortName, state, isTest)
 				continue
+			}
+			if false {
+				// Sometimes useful during debugging, but too noisy to have enabled for all test failures
+				t.Logf("%s handled by %q", k, obj)
 			}
 			delete(want, k)
 			if state != exp {
-				t.Errorf("object at %s should be %s but is %s", posn, exp, state)
+				t.Errorf("object at %s (%s) should be %s but is %s (tests = %t)", relativePosition(posn), obj.ShortName, exp, state, isTest)
 			}
 		}
 	}
 	ures := res.Result.(Result)
 	checkObjs(ures.Used, shouldBeUsed)
 	checkObjs(ures.Unused, shouldBeUnused)
+	checkObjs(ures.Quiet, shouldBeQuiet)
 
-	for key, b := range want {
-		var exp string
-		if b {
-			exp = "used"
-		} else {
-			exp = "unused "
-		}
-		t.Errorf("did not see expected %s object %s:%d", exp, key.file, key.line)
+	for key, e := range want {
+		exp := e.String()
+		t.Errorf("object at %s:%d should be %s but wasn't seen", relativePath(key.file), key.line, exp)
 	}
 }
 
 func TestAll(t *testing.T) {
-	dirs := []string{
-		"tests",
-		"alias",
-		"anonymous",
-		"blank",
-		"cgo",
-		"consts",
-		"conversion",
-		"cyclic",
-		"defer",
-		"elem",
-		"embedded_call",
-		"embedding",
-		"embedding2",
-		"exported_fields",
-		"exported_fields_main",
-		"exported_method_test",
-		"fields",
-		"functions",
-		"ignored",
-		"interfaces",
-		"interfaces2",
-		"linkname",
-		"main",
-		"mapslice",
-		"methods",
-		"named",
-		"nested",
-		"nocopy",
-		"nocopy-main",
-		"pointer-type-embedding",
-		"pointers",
-		"quiet",
-		"selectors",
-		"switch_interface",
-		"tests",
-		"tests-main",
-		"type-dedup",
-		"type-dedup2",
-		"type-dedup3",
-		"types",
-		"unused-argument",
-		"unused_type",
-		"variables",
+	dirs, err := filepath.Glob(filepath.Join(analysistest.TestData(), "src", "example.com", "*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, dir := range dirs {
+		dirs[i] = filepath.Join("example.com", filepath.Base(dir))
 	}
 
 	results := analysistest.Run(t, analysistest.TestData(), Analyzer.Analyzer, dirs...)
